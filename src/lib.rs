@@ -25,13 +25,11 @@ mod tests {
     fn s1c2() {
         let src  = pretty::read_hex("1c0111001f010100061a024b53535009181c");
         let key  = pretty::read_hex("686974207468652062756c6c277320657965");
-        let dest = pretty::read_hex("746865206b696420646f6e277420706c6179");
+        let dest = "746865206b696420646f6e277420706c6179";
 
         match xor::fixed(&src, &key) {
             Ok(cipher) => {
-                cipher.into_iter().zip(dest).for_each(|(c, d)| {
-                    assert_eq!(d, c);
-                });
+                assert_eq!(pretty::write_hex(&cipher), dest);
             },
             Err(e) => panic!(e),
         }
