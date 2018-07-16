@@ -16,6 +16,7 @@ pub fn load_file_lines(filename: &str) -> std::io::Result<Vec<String>> {
 }
 
 pub fn count_ones(x: u8) -> usize {
+    // https://prismoskills.appspot.com/lessons/Bitwise_Operators/Count_ones_in_an_integer.jsp
     let mut x = x;
     let mut count = 0;
     while x != 0 {
