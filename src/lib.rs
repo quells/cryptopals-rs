@@ -1,3 +1,5 @@
+#![feature(exact_chunks)]
+
 pub mod pretty;
 pub mod score;
 pub mod xor;
@@ -6,7 +8,7 @@ pub mod utils;
 #[cfg(test)]
 mod tests {
     use pretty;
-    use score::{*, Scorer};
+    use score::*;
     use xor;
     use utils;
 
@@ -40,14 +42,7 @@ mod tests {
         let src = pretty::read_hex("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
 
         let scorer = EnglishASCII{};
-        let keys: Vec<u8> = (1..255).collect();
-        let (key, guess) = scorer.best_guess(&src, &keys, |bytes, key| {
-            let plain = xor::single(&bytes, *key);
-            match str::from_utf8(&plain) {
-                Ok(s) => Ok(s.to_string()),
-                Err(e) => Err(e),
-            }
-        });
+        let (key, guess) = xor::break_single(&src, &scorer);
 
         assert_eq!(key, 88);
         assert_eq!(guess, "Cooking MC's like a pound of bacon");
@@ -60,17 +55,10 @@ mod tests {
         match utils::load_file_lines("data/s1c4.txt") {
             Ok(lines) => {
                 let scorer = EnglishASCII{};
-                let keys: Vec<u8> = (1..255).collect();
 
                 for l in lines {
                     let src = pretty::read_hex(&l);
-                    let (_, guess) = scorer.best_guess(&src, &keys, |bytes, key| {
-                        let plain = xor::single(&bytes, *key);
-                        match str::from_utf8(&plain) {
-                            Ok(s) => Ok(s.to_string()),
-                            Err(e) => Err(e),
-                        }
-                    });
+                    let (_, guess) = xor::break_single(&src, &scorer);
                     if guess == "Now that the party is jumping\n" {
                         found = true;
                         break;
@@ -100,5 +88,34 @@ mod tests {
         let b = "wokka wokka!!!".as_bytes();
         let d = utils::hamming(&a, &b);
         assert_eq!(d, 37);
+    }
+
+    #[test]
+    fn s1c6() {
+        match utils::load_file_lines("data/s1c6.txt") {
+            Ok(l) => {
+                let text = l.join("");
+                let src = pretty::read_b64(&text);
+                let key_size = xor::guess_repeating_keysize(&src, 40);
+
+                let chunks = src.exact_chunks(key_size);
+                let transposed = utils::transpose(chunks);
+
+                let mut key = Vec::new();
+                let scorer = EnglishASCII{};
+                
+                for block in transposed {
+                    let (k, _) = xor::break_single(&block, &scorer);
+                    key.push(k);
+                }
+                
+                assert_eq!(str::from_utf8(&key), Ok("Terminator X: Bring the noise"));
+
+                let decoded = xor::repeating(&src, &key);
+
+                println!("{:?}", str::from_utf8(&decoded));
+            },
+            Err(e) => panic!(e),
+        }
     }
 }
