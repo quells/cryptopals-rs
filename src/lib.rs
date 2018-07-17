@@ -112,8 +112,9 @@ mod tests {
                 assert_eq!(str::from_utf8(&key), Ok("Terminator X: Bring the noise"));
 
                 let decoded = xor::repeating(&src, &key);
-
-                println!("{:?}", str::from_utf8(&decoded));
+                let message = str::from_utf8(&decoded).unwrap();
+                
+                assert!(message.starts_with("I'm back and I'm ringin' the bell"));
             },
             Err(e) => panic!(e),
         }
