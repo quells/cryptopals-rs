@@ -3,6 +3,8 @@
 pub mod pretty;
 pub mod score;
 pub mod xor;
+pub mod ecb;
+pub mod aes;
 pub mod utils;
 
 #[cfg(test)]
@@ -10,6 +12,8 @@ mod tests {
     use pretty;
     use score::*;
     use xor;
+    use aes;
+    use ecb;
     use utils;
 
     use std::{str};
@@ -118,5 +122,21 @@ mod tests {
             },
             Err(e) => panic!(e),
         }
+    }
+
+    #[test]
+    fn s1c7() {
+        // openssl enc -aes-128-ecb -a -d -K '59454c4c4f57205355424d4152494e45' -nosalt -in data/s1c7.txt
+        let lines = match utils::load_file_lines("data/s1c7.txt") {
+            Ok(lines) => lines,
+            Err(e) => panic!(e),
+        };
+        let b64encoded = lines.join("");
+        let ciphertext = pretty::read_b64(&b64encoded);
+        let key = "YELLOW SUBMARINE".as_bytes();
+        let plaintext = ecb::decrypt(&key, &ciphertext, aes::decrypt128);
+        let message = str::from_utf8(&plaintext).unwrap();
+
+        assert!(message.starts_with("I'm back and I'm ringin' the bell"));
     }
 }
